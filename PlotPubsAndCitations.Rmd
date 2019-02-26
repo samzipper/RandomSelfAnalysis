@@ -1,0 +1,143 @@
+---
+title: "Better than Google Scholar: Plots of annual publications and citations by authorship position"
+author: "Sam Zipper"
+date: "February 25, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Make a neat little plot of publications and citations
+
+Maybe you're applying for a jobs or going up for tenure and are trying to demonstrate your worth. In academia, the number of publications and citations are commonly used as indicators of productivity and influence - the hypothesis being that productive people are writing more papers and influential people are being cited more. They are also flawed metrics, so hopefully decisions aren't being made based on publications alone! 
+
+Nevertheless, some people in positions of power look at publications and citations, so it's handy to show them off. Since I like making graphs, I decided to make a couple simple graphs to put on the front page of my CV to emphasize both my past performance and future trajectory for these metrics. I don't know if putting graphs in CVs is normal, but I was complimented on it during multiple interviews, so in the end I'm glad I bothers. Obviously, YMMV.
+
+Now, since I'm learning RMarkdown, I thought I'd use it as a simple example to share with you!
+
+First, we have to load some packages. We'll use the [`scholar` package](https://github.com/jkeirstead/scholar) to grab the data, then rearrange it a bit with `dplyr`, `reshape2`, and `stringr`, and finally plot with `ggplot2`. So, let's load some packages!
+
+```{r}
+require(scholar)  # interface with google scholar
+require(ggplot2)  # for plotting
+require(dplyr)    # for data tidying
+require(reshape2) # for data tidying
+require(stringr)  # for working with string data
+```
+
+To get Google Scholar data, first you have to determine your Google Scholar ID. You can get this from the characters after the `=` in your Google Scholar URL. For instance, [my Google Scholar URL](https://scholar.google.ca/citations?user=XXIpO1YAAAAJ) is `https://scholar.google.ca/citations?user=XXIpO1YAAAAJ`, so I know my ID is `XXIpO1YAAAAJ`.
+
+```{r}
+me <- "XXIpO1YAAAAJ"
+```
+
+First, we will use the `get_publications()` function from `scholar` package to get a list of all my publications:
+
+```{r}
+pubs <- 
+  me %>% 
+  get_publications() %>% 
+  # get rid of non-journal articles (e.g. theses) - in my profile, these don't have a year
+  subset(is.finite(year))
+```
+
+The `author` field has a comma-separated list of all the authors for each publication. I want to separately plot publications for which I am the first author, so we need to figure out who was the first author for each paper:
+
+```{r}
+pubs$first_author <- 
+  # the 'author' column is a factor by default, so first convert to character
+  pubs %>% 
+  .$author %>% 
+  as.character() %>% 
+  # split based on commas and grab the first author
+  strsplit(split="[,]") %>% 
+  sapply(function(x) x[1])
+
+# look at the results
+pubs$first_author
+```
+
+Uh-oh! I'm referred to as both "S Zipper" and "SC Zipper". Fortunately, I don't have any co-authors named Zipper, so I will claim any paper with a Zipper first author as my own.
+
+```{r}
+pubs$first_author_me <-
+  pubs %>% 
+  .$first_author %>% 
+  stringr::str_detect(pattern="Zipper")
+```
+
+Great! We now have my publication history, and we know for every paper whether I am the first author or not. 
+
+Now, let's work on citations. The `pubid` field can be used to get annual citations for each of my publications. We'll loop through all my papers, extract the citations by year, and put them into a big data frame. There's probably a vectorized way to do this which might be worth figuring out if you have a lot of papers.
+
+```{r}
+for (i in 1:length(pubs$pubid)){
+  # grab citations for this paper
+  paper_cites <- get_article_cite_history(id = me, 
+                                          article = pubs$pubid[i])
+  
+  # make master data frame
+  if (i == 1){
+    all_cites <- paper_cites
+  } else {
+    all_cites <- rbind(all_cites, paper_cites)
+  }
+}
+
+head(all_cites)
+```
+
+Now we know the annual citations for each paper, and can join it with the `pubs` data frame where we've already determined the first author for each paper. 
+
+```{r}
+all_cites <- 
+  left_join(all_cites, 
+            pubs[, c("pubid", "first_author_me")], 
+            by="pubid")
+```
+
+We now have all the data we need. Let's just re-arrange a bit in preparation for plotting.
+
+```{r}
+# for the plots, we want annual sums
+pubs_yr <-
+  pubs %>% 
+  group_by(year, first_author_me) %>% 
+  summarize(number = n(),            # could use any field
+            metric = "Publications") # this will come in handy later
+cites_yr <-
+  all_cites %>% 
+  group_by(year, first_author_me) %>% 
+  summarize(number = sum(cites),
+            metric = "Citations")
+
+# to make a nice faceted plot, we'll want to combine these into a single data frame
+pubs_and_cites <- rbind(pubs_yr, cites_yr)
+```
+
+Finally - let's make some graphs!
+
+```{r}
+ggplot(pubs_and_cites, aes(x=factor(year), y=number, fill=first_author_me)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~factor(metric, levels=c("Publications", "Citations")),
+             scales = "free_y") +
+  scale_x_discrete(name = "Year") +
+  scale_y_continuous(name = "Number") +
+  # everything below here is just aesthetics
+  scale_fill_manual(name = "First Author", 
+                    values = c("TRUE"="#e6194b", "FALSE"="#0082c8"),
+                    labels = c("TRUE"="Zipper", "FALSE"="Other")) +
+  theme_bw(base_size=12) +
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 11, face="bold"),
+        axis.title = element_text(size = 10, face="bold"),
+        legend.title = element_text(size = 10, face="bold"),
+        legend.position = c(0.01,0.99),
+        legend.justification = c(0, 1))
+```
+
+Voila!
