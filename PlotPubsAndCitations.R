@@ -35,8 +35,12 @@ pubs$first_author_me <-
   pubs$first_author %>% 
   stringr::str_detect(pattern = my_name)
 
-# use `pubid` to get citations for each paper and combined
+# i am co-lead author on a paper in which my name is listed second; 
+# i also want to include this, which I will do using the pubid (which I looked in the pubs table to get)
+pubs$first_author_me[pubs$pubid %in% c("B3FOqHPlNUQC")] <- TRUE
 
+
+# use `pubid` to get citations for each paper and combined
 for (i in 1:length(pubs$pubid)){
   # grab citations for this paper
   paper_cites <- 
