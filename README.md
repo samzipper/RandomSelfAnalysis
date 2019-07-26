@@ -1,2 +1,2 @@
-# CitationAnalysis
-Scripts and tools for looking at citation data
+# RandomSelfAnalysis
+Random scripts and codes loosely categorized as 'analysis of my work habits'
