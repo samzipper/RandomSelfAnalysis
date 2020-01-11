@@ -9,9 +9,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 **By:** [Sam Zipper](https://www.twitter.com/ZipperSam)
 
-**Date:** February 27, 2019
+**Date:** Published February 27, 2019; updated July 26, 2019
 
-(If you just want the code, [go here](https://github.com/samzipper/CitationAnalysis/blob/master/PlotPubsAndCitations.R).)
+(If you just want the code, [go here](https://github.com/samzipper/SelfAnalysis/blob/master/PlotPubsAndCitations.R).)
 
 Maybe you're applying for a job or going up for tenure, and are trying to demonstrate your research output in a unique way. In academia, the number of publications and citations are commonly used as indicators of productivity and influence - the hypothesis being that productive people are writing more papers and influential people are being cited more. The [limitations](https://thebibliomagician.wordpress.com/2018/03/23/is-it-time-to-bury-the-h-index/) of these [metrics](http://blog.impactstory.org/four-great-reasons-to-stop-caring-so-much-about-the-h-index/) have [long been noted](http://blogs.nature.com/nautilus/2007/10/the_hindex_has_its_flaws.html), so I won't belabor them here. 
 

@@ -23,7 +23,7 @@ theme_scz <- function(...){
 
 theme_set(theme_scz())
 
-# authorize account
+# authorize account - this takes place in browser window
 gs_auth(new_user = T)
 
 # register google sheet
@@ -41,7 +41,7 @@ for (w in 3:sheet$n_ws){
   # transform to long-form and combine
   daytype_long <- 
     tibble::tibble(Day = colnames(daytype), 
-                   Daytype = c(daytype[1,]))
+                   Daytype = c(as.character(daytype[1,])))
   data_long <- 
     reshape2::melt(data, id = "Time", value.name = "Activity", variable.name = "Day")
   
@@ -65,10 +65,12 @@ all_weeks$Day <- factor(all_weeks$Day, levels = c("Monday", "Tuesday", "Wednesda
 ## daily hours worked plots
 daily_hrs <- 
   all_weeks %>% 
-  dplyr::group_by(week_start_date, Day) %>% 
+  dplyr::group_by(week_start_date, Day, Daytype) %>% 
   dplyr::summarize(hours_worked = sum(Activity != "Not Work")*0.5) %>% 
   dplyr::mutate(hours_worked_cut = cut(hours_worked, c(0, 0.25, 2, 6, 9, 24), include.lowest = T,
                                        labels = c("0", "0.5 - 2", "2.5 - 6", "6.5 - 9", "> 9.5")))
+
+hrs_per_workday <- sum(daily_hrs$hours_worked)/sum(daily_hrs$Daytype %in% c("work", "conference"))
 
 ggplot(daily_hrs, aes(x = Day, y = week_start_date, fill = hours_worked)) +
   geom_raster()
@@ -97,6 +99,8 @@ weekly_hrs <-
   dplyr::summarize(hours_worked = sum(Activity != "Not Work")*0.5)
 min(weekly_hrs$hours_worked)
 max(weekly_hrs$hours_worked)
+mean(weekly_hrs$hours_worked)
+median(weekly_hrs$hours_worked)
 
 ggplot(weekly_hrs, aes(x = hours_worked)) +
   geom_histogram(breaks = seq(20, 80, 2.5)) +
