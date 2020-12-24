@@ -1,8 +1,6 @@
-## WorkTimeAnalysis.R
-# Tutorial on googlesheets package here: https://datascienceplus.com/how-to-use-googlesheets-to-connect-r-to-google-sheets/
+## WorkTimeAnalysis_PlotData.R
 
 library(tidyverse)
-library(googlesheets)
 
 ## ggplot theme
 windowsFonts(Arial=windowsFont("TT Arial"))
@@ -23,44 +21,18 @@ theme_scz <- function(...){
 
 theme_set(theme_scz())
 
-# authorize account - this takes place in browser window
-gs_auth(new_user = T)
+## load output from WorkTimeAnalysis_CollectData.R
+all_weeks_19 <- read_csv("WorkTimeAnalysis_Hours_2019.csv", col_types = "ccccT")
+all_weeks_20 <- read_csv("WorkTimeAnalysis_Hours_2020.csv", col_types = "ccccT")
 
-# register google sheet
-sheet <- gs_title("Work Tracker")
+# combine into single data frame
+all_weeks <- 
+  dplyr::bind_rows(all_weeks_19, all_weeks_20) %>% 
+  subset(!is.na(Time))
 
-# I always keep the first two sheets as the ongoing week and the template, so start at worksheet 3
-for (w in 3:sheet$n_ws){
-  # figure out when this week starts
-  week_start_date <- lubridate::mdy(sheet$ws$ws_title[w])
-  
-  # read google sheet
-  data <- gs_read(sheet, ws = w, range = "A3:H38")
-  daytype <- gs_read(sheet, ws = w, range = "B2:H2", col_names = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
-  
-  # transform to long-form and combine
-  daytype_long <- 
-    tibble::tibble(Day = colnames(daytype), 
-                   Daytype = c(as.character(daytype[1,])))
-  data_long <- 
-    reshape2::melt(data, id = "Time", value.name = "Activity", variable.name = "Day")
-  
-  week_summary <- 
-    dplyr::left_join(data_long, daytype_long, by = "Day") %>% 
-    replace_na(list("Activity" = "Not Work")) %>% 
-    dplyr::mutate(week_start_date = week_start_date)
-  
-  if (w == 3){
-    all_weeks <- week_summary
-  } else {
-    all_weeks <-
-      dplyr::bind_rows(week_summary, all_weeks)
-  }
-  
-}
-
-## set Day factors
+## set factors
 all_weeks$Day <- factor(all_weeks$Day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+all_weeks$Time <- factor(all_weeks$Time, levels = unique(all_weeks$Time))
 
 ## daily hours worked plots
 daily_hrs <- 
@@ -78,7 +50,7 @@ ggplot(daily_hrs, aes(x = Day, y = week_start_date, fill = hours_worked)) +
 ggplot(daily_hrs, aes(x = Day, y = week_start_date, fill = hours_worked_cut)) +
   geom_raster() +
   scale_x_discrete(expand = c(0, 0)) +
-  scale_y_date(name = "Week", expand = c(0, 0)) +
+  scale_y_datetime(name = "Week", expand = c(0, 0)) +
   scale_fill_manual(name = "Daily Hours Worked",
                     values = c("gray65", "#ffffb2", "#fecc5c", "#fd8d3c", "#e31a1c"))
 
@@ -140,4 +112,3 @@ weekday_hours <-
 
 ggplot(weekday_hours, aes(x = 1, y = Time, fill = hours_worked)) +
   geom_raster()
-
