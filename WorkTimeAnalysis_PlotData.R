@@ -76,7 +76,7 @@ median(weekly_hrs$hours_worked)
 
 ggplot(weekly_hrs, aes(x = hours_worked)) +
   geom_histogram(breaks = seq(20, 80, 2.5)) +
-  scale_x_continuous(name = "Weekly Hours Worked", expand = c(0, 0)) +
+  scale_x_continuous(name = "Hours Worked in Week", expand = c(0, 0)) +
   scale_y_continuous(name = "Number of Weeks")
 
 ## weekly hours by activity
