@@ -55,6 +55,9 @@ date_covid <- ymd("2020-03-16")
 date_baby <- ymd("2020-06-29")
 dates_all <- as.POSIXct(c(date_new_job, date_covid, date_baby))
 
+# date limits for plots
+date_limits <- as.POSIXct(c(ymd("2019-01-01"), ymd("2021-01-03")))
+
 # load 2019 and 2020 data
 all_weeks_19 <- read_csv("https://raw.github.com/samzipper/SelfAnalysis/master/WorkTimeAnalysis_Hours_2019.csv", col_types = "ccccT")
 all_weeks_20 <- read_csv("https://raw.github.com/samzipper/SelfAnalysis/master/WorkTimeAnalysis_Hours_2020.csv", col_types = "ccccT")
@@ -139,49 +142,49 @@ max_days_on_le2 <- max(daily_hrs$le2_counter[!daily_hrs$le2])
 ```
 
 # Summary
-Seems like every few months some random academic tweets about how they work a lot of hours, and then other people tweet about how they are doing fine despite working fewer hours. I've never been able to participate in these conversations because I don't know how much I work, and also people rarely seem to have any actual data to support their claims about work (or lack thereof). So, I tracked my work at 30-minute intervals for [2019](https://docs.google.com/spreadsheets/d/1O4tB-IDLZUqP1I2ECJ9JnBOEDbQEoOwNLbbcBjrV4Tk/edit?usp=sharing) and [2020](https://docs.google.com/spreadsheets/d/1I4kUeZEEtup1e7Wd3PSqfBpaHyK6ntcL18Dz2zYSCfs/edit#gid=1890047702) to try and answer two questions:
+Seems like every few months some random academic tweets about how they work a lot of hours, and then other people tweet about how they are doing fine despite working fewer hours. I've never been able to participate in these conversations because I don't know how much I work, and also people rarely seem to have any actual data to support their claims about work (or lack thereof). So, I tracked my work at 30-minute intervals for [2019](https://docs.google.com/spreadsheets/d/1O4tB-IDLZUqP1I2ECJ9JnBOEDbQEoOwNLbbcBjrV4Tk/edit?usp=sharing) and [2020](https://docs.google.com/spreadsheets/d/1O4tB-IDLZUqP1I2ECJ9JnBOEDbQEoOwNLbbcBjrV4Tk/edit?usp=sharing) to try and answer two questions:
 
  1. How much do I work?
   - *Quick answer: ~40-45 hrs/week, and never more than 50 hours (unless I'm away from home for a conference, workshop, or field work). But, I don't take very many days completely off.*
  2. When I do work, how do I spend my time?
-  - *Quick answer: research has the plurality of my time, but meetings and logistics (emails and other little tasks) are close behind and gaining.*
+  - *Quick answer: research has the plurality of my time over the full 2 years, but has been overtaken by logistics (emails and other little tasks) recently.*
  
 The years analyzed (January 2019 - December 2020) had several important personal and professional changes including (i) going from a postdoc to a PI at a new institution (August 2019); (ii) working from home due to COVID (March 2020); (iii) and having our second kid (June 2020), so I also decided to look into whether my working time or activities changed through time.
 
 I did this analysis mostly for curiosity's sake, but then realized I should make a couple data-driven resolutions for how to improve my work-life balance in 2021:
 
  - Take at least one day per weekend with 0 work hours (preferably both) - I was often spending an hour or two on emails during the weekend.
- - Reduce the amount of time spent on logistics.
+ - Reduce the amount of time spent on logistics. I think a recent shift to not checking my email or taking any meetings before 10 AM has been helpful in this regard, but other tips would be welcome.
 
 # How much do I work?
 
 Answering the first question (How much do I work?) is pretty simple; I can just add up all the hours I worked. 
 
-I sliced the data a few different ways.
+Over the course of the two years, I worked `r hrs_worked` hours, or an average of `r round(hrs_worked/n_weeks, 1)` hours per week - pretty close to the standard 40 hr work week. Sounds pretty good! Until, of course, you consider the fact that I took some vacations during this time, and also was on part-time leave for 3 months with the new baby.
 
-Over the course of the two years, I worked `r hrs_worked` hours, or an average of `r round(hrs_worked/n_weeks, 1)` hours per week - pretty close to the standard 40 hr work week. Sounds pretty good! Until, of course, you consider the fact that I took some vacations during this time, and also was on part-time leave for 3 months with the new baby, so I would have expected the average to be a bit lower.
-
-Let's see how the hour count varies week-to-week:
+The hour count is pretty consistent week-to-week, fluctuating around 40-45 hrs:
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4.5} 
 ggplot(weekly_hrs, aes(x = week_start_date, y = hours_worked)) +
   geom_col(color = NA, fill = col.cat.blu) +
-  scale_x_datetime(name = "Week", expand = c(0, 0)) +
+  scale_x_datetime(name = "Week", expand = c(0, 0), limits = date_limits) +
   scale_y_continuous(name = "Hours Worked in Week") +
   geom_hline(yintercept = 40, color = col.gray) +
   geom_vline(xintercept = dates_all, color = col.cat.red)
 ```
 
-Pretty consistent overall, fluctuating around 40-45 hrs, with a median of `r median_hrs_wk` hours and a mode of `r mode_hrs_wk` hours. The three vertical red lines correspond to starting my new job (August 2019), switching to work from home (March 2020), and the new baby (June 2020). Only the new baby seemed affect hours worked (we'll look at allocation of time later), as I went on partial leave for 12 weeks.
+My median weekly work time is `r median_hrs_wk` hours the mode is `r mode_hrs_wk` hours. The three vertical red lines correspond to starting my new job (August 2019), switching to work from home (March 2020), and the new baby (June 2020). Only the new baby seemed affect hours worked, as I went on partial leave for 12 weeks.
 
 There are a few outliers on the high end: 9 weeks in the past two years where I worked more than 50 hours. Cross-referencing to my calendar reveals that all of those are weeks where I was away from home for a conference, workshop, or field work for at least part of the week. I also noticed that there are no weeks with 0 hours worked, and the least I worked in a week was `r min(weekly_hrs$hours_worked)` hours, which is troubling.
 
-But overall, **in a typical week I work between 40-45 hours**. Now, let's take a look at the daily data.
+But overall, **in a typical week I work between 40-45 hours**. 
+
+Now, let's take a look at the daily data, colored by the type of day:
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4.5}
 ggplot(daily_hrs, aes(x = date, y = hours_worked, fill = Daytype)) +
   geom_col(color = NA) +
-  scale_x_datetime(name = "Day", expand = c(0, 0)) +
+  scale_x_datetime(name = "Day", expand = c(0, 0), limits = date_limits) +
   scale_y_continuous(name = "Hours Worked") +
   scale_fill_manual(name = "Day Type", values = c("conference" = col.cat.yel,
                                                   "weekend" = col.cat.blu,
@@ -193,7 +196,7 @@ ggplot(daily_hrs, aes(x = date, y = hours_worked, fill = Daytype)) +
   theme(legend.position = "bottom")
 ```
 
-I've colored by the type of day. Pretty clear pattern - usually working right around 8 +/- 1 hours on work days, with the extreme highs mostly driven by conferences/workshops, and lower values on the weekends. This is also evident in a histogram of daily hours works:
+Pretty clear pattern - usually working right around 8 +/- 1 hours on work days, with the extreme highs mostly driven by conferences/workshops, and lower values on the weekends. This is also evident in a histogram of daily hours worked:
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4.5}
 ggplot(subset(daily_hrs, Daytype != "conference"), aes(x = hours_worked, fill = hours_worked_cut)) +
@@ -208,36 +211,29 @@ ggplot(subset(daily_hrs, Daytype != "conference"), aes(x = hours_worked, fill = 
         legend.background = element_blank())
 ```
 
-Now, how about that left side of the histogram - less than 75 days with 0 hours worked over the past two years? Yikes. In this time period alone, there were `r weekend_days` weekend days and another `r off_days` days off for holiday, vacation, parental leave, etc., meaning that I actually worked on `r 100*(1-round(nowork_days/(weekend_days+off_days), 1))`% of my days off. Anecdotally, this is true - in the histogram we can see a large cluster of days < 2 hours, which is about the length of my kids' nap time, and I will often sit on the couch and check some emails during weekend naps. This is confirmed by looking at hours worked broken down by day of week:
+As we can see, a peak right at 8 hours (vertical black line) and a pretty strong fall-off on either side of that. But, how about that left side of the histogram - less than 75 days with 0 hours worked over the past two years? Yikes. In this time period alone, there were `r weekend_days` weekend days and another `r off_days` days off for holiday, vacation, parental leave, etc., meaning that I actually worked on `r 100*(1-round(nowork_days/(weekend_days+off_days), 1))`% of my days off. 
+
+This matches well with my priors - in the histogram we can see a large cluster of days < 2 hours, which is about the length of my kids' nap time, and I will often sit on the couch and check some emails during nap time on weekends. This pattern is even evident if we look at the hours worked broken down by day of week:
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4.5}
 ggplot(daily_hrs, aes(x = Day, y = week_start_date, fill = hours_worked_cut)) +
   geom_raster() +
   scale_x_discrete(expand = c(0, 0)) +
-  scale_y_datetime(name = "Week", expand = c(0, 0)) +
+  scale_y_datetime(name = "Week", expand = c(0, 0), limits = date_limits) +
   scale_fill_manual(name = "Daily Hours Worked",
                     values = c("gray65", "#ffffb2", "#fecc5c", "#fd8d3c", "#e31a1c")) +
   theme(legend.position = "bottom")
 ```
 
-Interesting pattern - those dark red weeks correspond to the times when I was away for a conference/workshop (note how they stopped in early 2020), and for some reason Mondays and Thursdays are the days when I tended to put in a bit of extra time. I'm proud of the fact that I never put in a full work day on a weekend (>= 6.5 hrs), but less happy about the fact that there are a lot of light yellows on Saturday and Sunday. 
+Those dark red weeks correspond to the times when I was away for a conference/workshop (note how they stopped in early 2020). For some reason Mondays and Thursdays are the days when I tended to put in a bit of extra time. I'm proud of the fact that I never put in a full work day on a weekend (>= 6.5 hrs), but less happy about the fact that there are a lot of light yellows on Saturday and Sunday, which leads to not a lot of gray boxes.
 
-Doing some quick math, I found that the maximum consecutive days where I worked (`r max_days_on` days, from March 31 to June 3, 2019) was 12x greater than the maximum consecutive days I didn't work at all (`r max_days_off` days, from August 24 to August 31, 2020). This is very bad. 
+I found that the maximum consecutive days where I worked (`r max_days_on` days, from March 31 to June 3, 2019) was 12x greater than the maximum consecutive days I didn't work at all (`r max_days_off` days, from August 24 to August 31, 2020). Since it's healthy to take days off, this is a problem that needs solving.  The low-hanging fruit is to just eliminate all the quick bits of work I did during weekend nap times, as mentioned above, under the assumption that those tasks (typically responding to emails) can be folded into the regular work week, which would probably be more efficient anyways. To ballpark the potential impact of this, I calculated that if I converted all days where I worked <2 hours to 0s, I would have a maximum of `r max_days_on_le2` consecutive days worked and `r max_days_off_le2` consecutive days off - much more to my liking!
 
-The low-hanging fruit to resolve this problem is to just eliminate all the quick bits of work I did during nap times, as mentioned above, under the assumption that those tasks (typically responding to emails) can be folded into the regular work week, which would probably be more efficient anyways. To ballpark the potential impact of this, I calculated that if I converted all days where I worked <2 hours to 0s, I would have a maximum of `r max_days_on_le2` consecutive days worked and `r max_days_off_le2` consecutive days off - much more to my liking!
-
-So, to draw some conclusions:
-
- - I work perhaps a bit over the recommended amount - typically averaging ~5-10% above an 8 hr workday and 40 hr workweek - but nothing extreme.
- - I never put in really long hours unless I am away from home.
- - I don't completely disconnect as much as I should.
-
-So, my resolution from part 1 of the analysis: **Take at least one day per weekend with 0 work hours**. My logic is that the potential detriment (overwork) is likely more than the gain (incremental progress on unimportant things). 
-
-I don't want to cut it to 0 hours on both days, because I like to spend a half hour on Sundays writing out hourly work plan for the week which helps me start the week focused on Monday morning.
+So, my resolution from part 1 of the analysis: **Take at least one day per weekend with 0 work hours**. The potential detriment of putting in those occasional weekend hours (overwork) is likely more than any gains (incremental progress on unimportant things). I don't want to cut it to 0 hours on both days, because I like to spend a half hour on Sundays planning out my work for the week which helps me start the week focused on Monday morning. I suppose this could be shifted to my last activity of the day on Friday afternoon... maybe in 2022!
 
 # What do I do when I'm working?
-I split things up into 6 categories:
+
+Answering this question is a bit more complicated, but I split things up into 6 categories:
 
  - `talking` = things that involved other people... meetings, seminars, zoom calls, etc.
  - `logistics` = stuff that is generally unimportant (but sometimes necessary). emails, expense reports, etc.
@@ -276,7 +272,7 @@ all_work$Activity <- factor(all_work$Activity, levels = work_by_activity$Activit
 work_by_week$Activity <- factor(work_by_week$Activity, levels = rev(work_by_activity$Activity))
 ```
 
-Let's check out how my `r sum(weekly_hrs$hours_worked)` hours of work broke down:
+Let's look big-picture first. My `r sum(weekly_hrs$hours_worked)` hours of work broke down as follows:
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4.5}
 ggplot(work_by_activity, aes(x = Activity, y = Hours, fill = Activity)) +
@@ -285,14 +281,14 @@ ggplot(work_by_activity, aes(x = Activity, y = Hours, fill = Activity)) +
   scale_fill_manual(values = pal_activity, guide = F)
 ```
 
-Research comes in the lead and constitutes `r round(100*work_by_activity$PrcTime[work_by_activity$Activity=="research"])`% of my time - thank goodness, since that's nominally what my specialized training is in. It's followed unfortunately closely by logistics (`r round(100*work_by_activity$PrcTime[work_by_activity$Activity=="logistics"])`%) and talking (`r round(100*work_by_activity$PrcTime[work_by_activity$Activity=="talking"])`%). Before you go thinking I'm an inattentive mentor, I just started keeping track of `mentees` as a separate category in April 2020 so that one is definitely an underestimate. From April 2020 onwards, it averaged `r round(mean(100*work_by_week$Time_Prc[work_by_week$Activity=="mentees" & work_by_week$week_start_date >= as.POSIXct("2020-04-20")]))`% of my time.
+`Research` comes in the lead and constitutes `r round(100*work_by_activity$PrcTime[work_by_activity$Activity=="research"])`% of my time - thank goodness, since research is supposedly what I've been specially trained in over the past decade. It's followed unfortunately closely by logistics (`r round(100*work_by_activity$PrcTime[work_by_activity$Activity=="logistics"])`%) and talking (`r round(100*work_by_activity$PrcTime[work_by_activity$Activity=="talking"])`%). About that `mentees` category - before you go thinking I'm an inattentive mentor, I just started keeping track of `mentees` as a separate category in April 2020 so that one is definitely an underestimate. From April 2020 onwards, it averaged `r round(mean(100*work_by_week$Time_Prc[work_by_week$Activity=="mentees" & work_by_week$week_start_date >= as.POSIXct("2020-04-20")]))`% of my time.
 
 Unsurprisingly, there's a lot of variability from week to week:
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4.5}
 ggplot(work_by_week, aes(x = week_start_date, y = Time_Prc, fill = Activity)) +
   geom_area(position = "stack") +
-  scale_x_datetime(name = "Week", expand = c(0,0)) +
+  scale_x_datetime(name = "Week", expand = c(0,0), limits = date_limits) +
   scale_y_continuous(name = "Time Spent [%]", expand = c(0,0),
                      labels = scales::percent) +
   scale_fill_manual(values = pal_activity) +
@@ -308,7 +304,7 @@ Focusing in on these top 3 categories, which represent `r round(100*(work_by_act
 ggplot(subset(work_by_week, Activity %in% c("research", "logistics", "talking")), 
               aes(x = week_start_date, y = Time_Prc, color = Activity)) +
   geom_point() +
-  scale_x_datetime(name = "Week", expand = c(0,0)) +
+  scale_x_datetime(name = "Week", expand = c(0,0), limits = date_limits) +
   scale_y_continuous(name = "Time Spent [%]", expand = c(0,0),
                      labels = scales::percent) +
   scale_color_manual(values = pal_activity) +
@@ -318,14 +314,61 @@ ggplot(subset(work_by_week, Activity %in% c("research", "logistics", "talking"))
 
 The proportion of my time I've spent on logistics has gone up, which is driving down the amount of time spent on research and talking. Based on this overly simple linear trend: `logistics` has risen from ~25% of my time two years ago to more like ~33% of my time now, and `research` has been knocked out of the top spot, from ~35% of my time two years ago to more like 25% of my time now.
 
-So, my official contract is for 85% research/15% service. 
+So, my resolution from part 2: **Reduce the amount of time spent on logistics.** I'm afraid more logistics may be in my future because of spinning up a big upcoming project that just started, but I've tried to recently work just on research for the first 2.5 hrs of my day before checking emails or having any meetings, which has been promising. But, any other tips for cutting down on this stuff would be useful.
 
-# Resolutions
+# Conclusions
 
-Anyways, speaking of using my time effectively, I think I've spent far too long pontificating about my work habits!
+Speaking of using my time effectively, my main conclusion is that I've spent far too long analyzing my work habits! But other than that, I'd say my main take-homes are that I work a pretty reasonable amount, but need to do a better job stepping away on weekends/holidays/vacations.
 
 # Some methodological caveats
 This was a self-reported study done purely for curiosity's sake, so I'm sure many holes can be picked in the analysis.
 
  - I just kept track by and estimating what I did for the majority of the half hour period beginning at that time. So, if I worked for 16 minutes on research, I would log it as research. In contrast, if I spent 16 of the 30 minutes doomscrolling on Twitter, I logged it as not work. This is all approximate and was often done after the fact.
- - There's some overlap between these categories (for example, talking with a mentee about their paper would be categorized as `mentee` though it could also be considered `talking` or `research`), so I just tried to be internally consistent. However, I wasn't totally consistent because I introduced `mentees` as a new category in April 2020, so it is definitely an underestimate.
+ - There's some overlap between these categories (for example, talking with a mentee about their paper would be categorized as `mentee` though it could also be considered `talking` or `research`), so I just tried to be internally consistent. 
+   - However, I wasn't totally consistent because I introduced `mentees` as a new category in April 2020. Prior to April 2020, `mentee` work was probably mostly put into `talking` (for meetings) or `research` (for working on papers, etc.).
+   
+# Bonus: when do I work within the day?
+```{r, include=FALSE}
+weekday_hours <- 
+  all_weeks %>% 
+  subset(Daytype == "work") %>% 
+  subset(Activity != "Not Work") %>% 
+  dplyr::group_by(Time) %>% 
+  dplyr::summarize(days_worked = n())
+
+weekend_hours <- 
+  all_weeks %>% 
+  subset(Daytype %in% c("weekend", "day off")) %>% 
+  subset(Activity != "Not Work") %>% 
+  dplyr::group_by(Time) %>% 
+  dplyr::summarize(days_worked = n())
+```
+This is the breakdown of when I work (on days categorized as `work` only, not weekends or holidays). This blurs together a few distinct work regimes - as a postdoc I would usually work 7 AM - 3 PM, whereas now I'm more like 8 AM - 4:30 PM with a break during the middle of the day, and an occasional bit of post-dinner email:
+
+```{r, echo=FALSE, fig.width=4, fig.height=6}
+ggplot(weekday_hours, aes(x = 1, y = Time, fill = days_worked/sum(daily_hrs$Daytype=="work"))) +
+  geom_raster() +
+  scale_x_continuous(name = NULL) +
+  scale_fill_viridis_c(name = "% of work days I was\nworking at this time",
+                       labels = scales::percent, 
+                       limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  NULL
+```
+
+And, here's when I work on weekends/holidays... Note that the color axis is different, maxing out a bit under 40%. Kids' naptime is quite evident here!
+```{r, echo=FALSE, fig.width=4, fig.height=6}
+ggplot(weekend_hours, aes(x = 1, y = Time, fill = days_worked/sum(daily_hrs$Daytype %in% c("weekend", "day off")))) +
+  geom_raster() +
+  scale_x_continuous(name = NULL) +
+  scale_fill_viridis_c(name = "% of days off I was\nworking at this time",
+                       labels = scales::percent) +
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  NULL
+```
