@@ -1299,10 +1299,10 @@ Time,Day,Activity,Daytype,week_start_date
 7:00 AM,Monday,Not Work,half day,2021-02-08
 7:30 AM,Monday,Not Work,half day,2021-02-08
 8:00 AM,Monday,Not Work,half day,2021-02-08
-8:30 AM,Monday,resesarch,half day,2021-02-08
-9:00 AM,Monday,resesarch,half day,2021-02-08
-9:30 AM,Monday,resesarch,half day,2021-02-08
-10:00 AM,Monday,resesarch,half day,2021-02-08
+8:30 AM,Monday,research,half day,2021-02-08
+9:00 AM,Monday,research,half day,2021-02-08
+9:30 AM,Monday,research,half day,2021-02-08
+10:00 AM,Monday,research,half day,2021-02-08
 10:30 AM,Monday,logistics,half day,2021-02-08
 11:00 AM,Monday,logistics,half day,2021-02-08
 11:30 AM,Monday,talking,half day,2021-02-08
