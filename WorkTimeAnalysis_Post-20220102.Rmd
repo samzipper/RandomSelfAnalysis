@@ -145,13 +145,13 @@ max_days_on_not2021 <- max(subset(daily_hrs, Year %in% c(2019, 2020) & !zero)$ze
 I started tracking my work activities in 2019 to make sure I wasn't overworking myself and to better understand how I spent my time. [A year ago, I analyzed my work activities for 2019 and 2020](https://www.samzipper.com/post/2021-01-02_how-much-do-i-work/) and found that I tended to work ~40-45 hrs in an average week, which seems reasonable, but I would often spend an hour or two working over the weekend, which I didn't like. Additionally, the amount of time I spent on research activities was decreasing, paired with an increase in logistics (stuff like checking emails, doing project management, etc.). 
 
 Based on the 2019-2020 data, I set two goals: 
+
  1. Take at least one day per weekend with 0 work hours (preferably both).
  2. Reduce the amount of time spent on logistics. 
 
 With another year of data, I can we see whether I've been able to meet these goals, and look at two questions: how much do I work, and what do I do when I'm working?
 
-For those interested, here's the raw data for  [2019](https://docs.google.com/spreadsheets/d/1O4tB-IDLZUqP1I2ECJ9JnBOEDbQEoOwNLbbcBjrV4Tk/edit?usp=sharing),  [2020](https://docs.google.com/spreadsheets/d/1I4kUeZEEtup1e7Wd3PSqfBpaHyK6ntcL18Dz2zYSCfs/edit?usp=sharing), and [2021](https://docs.google.com/spreadsheets/d/1cE-u8IsB96H01Y-3G3_JeL8AugWl2oJEPOJDEMtraj0/edit?usp=sharing). If you want to try this yourself, feel free to make a copy of my spreadsheet, and [here is a script that can scrape the data from Google Sheets into a CSV file](https://github.com/samzipper/SelfAnalysis/blob/master/WorkTimeAnalysis_CollectData.R).
-
+For those interested, here's the raw data for  [2019](https://docs.google.com/spreadsheets/d/1O4tB-IDLZUqP1I2ECJ9JnBOEDbQEoOwNLbbcBjrV4Tk/edit?usp=sharing),  [2020](https://docs.google.com/spreadsheets/d/1I4kUeZEEtup1e7Wd3PSqfBpaHyK6ntcL18Dz2zYSCfs/edit?usp=sharing), and [2021](https://docs.google.com/spreadsheets/d/1cE-u8IsB96H01Y-3G3_JeL8AugWl2oJEPOJDEMtraj0/edit?usp=sharing). If you want to try this yourself, feel free to copy the spreadsheet and track your own hours - I just keep it open as a pinned tab and try to fill it a couple times a day. [Here is a script that can scrape the data from Google Sheets into a CSV file](https://github.com/samzipper/SelfAnalysis/blob/master/WorkTimeAnalysis_CollectData.R), and [here is the code for this blog post](https://github.com/samzipper/SelfAnalysis/blob/master/WorkTimeAnalysis_Post-20220102.Rmd).
 
 # How much do I work?
 
@@ -168,6 +168,7 @@ ggplot(weekly_hrs, aes(x = week_start_date, y = hours_worked)) +
 The dip in mid-2020 is a period of partial parental leave (I extended my leave by working part-time, rather than taking one large chunk). In total, I worked `r sum(subset(weekly_hrs, Year == 2021)$hours_worked)` hours in 2021, compared to `r sum(subset(weekly_hrs, Year == 2020)$hours_worked)` hours in 2020 and `r sum(subset(weekly_hrs, Year == 2019)$hours_worked)` hours in 2019. This translated to a median weekly hour count of `r median(subset(weekly_hrs, Year == 2021)$hours_worked)` hours in 2021 (2020 = `r median(subset(weekly_hrs, Year == 2020)$hours_worked)` hrs, 2019 = `r median(subset(weekly_hrs, Year == 2019)$hours_worked)` hrs).
 
 My goals mostly focused on my daily work. While I never worked long days on weekends, I would often check my email during kid naptime, and I wanted to avoid this so I would have more days with 0 hours worked. This, overall, was successful: 
+
 ```{r, echo=FALSE, fig.width=6, fig.height=8}
 ggplot(subset(daily_hrs, Daytype != "conference" & Year != 2022), aes(x = hours_worked, fill = hours_worked_cut)) +
   geom_histogram(binwidth = 0.5) +
@@ -185,7 +186,7 @@ We can see that, in 2021, there are far more days with 0 hours (`r sum(subset(da
 
 ```{r, echo=FALSE, fig.width=6, fig.height=8}
 ggplot(daily_hrs, aes(x = Day, y = week_start_date, fill = hours_worked_cut)) +
-  geom_raster() +
+  geom_tile() +
   scale_x_discrete(expand = c(0, 0)) +
   scale_y_datetime(name = "Week", expand = c(0, 0), limits = date_limits) +
   scale_fill_manual(name = "Daily Hours Worked",
@@ -272,24 +273,26 @@ all_work %>%
   scale_y_continuous(name = "Half-Hours") +
   scale_fill_manual(values = pal_activity)
 ```
-`Talking` was remarkable consistent from year to year, and there was a dramatic increase in `field` in 2021, which I attribute to the start of our NSF AIMS project that requires lots of time outdoors. There has also been a general increase in `logistics` and `mentees` at the expense of `research` (note: I didn't start logging `mentees` as a separate category until April 2020 so 2021 is the first full year of data there). `Service` is generally a tricky category because much of it (for example, the DEIB committee, etc.) is in the form of meetings so gets lumped into the `talking` category.
+
+There was a dramatic increase in `field` in 2021, which I attribute to the start of our NSF AIMS project that requires lots of time outdoors. There has also been a general increase in `logistics` and `mentees` at the expense of `research` (note: I didn't start logging `mentees` as a separate category until April 2020 so 2021 is the first full year of data there). `Service` is generally a tricky category because much of it (for example, the DEIB committee, etc.) is in the form of meetings so gets lumped into the `talking` category. `Talking` was remarkable consistent from year to year, despite the fact that I felt like I had more meetings than ever in 2021, so maybe that just indicates my meeting tolerance has decreased.
 
 Across all of 2021, my time breaks down as:
- - `research` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "research"]*100, 1)`%
+
  - `logistics` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "logistics"]*100, 1)`%
+ - `research` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "research"]*100, 1)`%
  - `talking` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "talking"]*100, 1)`%
  - `field` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "field"]*100, 1)`%
- - `conference` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "conference"]*100, 1)`%
- - `travel` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "travel"]*100, 1)`%
+ - `mentees` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "mentees"]*100, 1)`%
  - `service` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "service"]*100, 1)`%
+ - `conference` = `r round(work_by_year$Time_Prc[work_by_year$Year == 2021 & work_by_year$Activity == "conference"]*100, 1)`%
 
-```{r, echo=FALSE, fig.width=6, fig.height=8}
+```{r, echo=FALSE, fig.width=8, fig.height=6}
 ggplot(work_by_week, aes(x = week_start_date, y = Time_Prc, color = Activity)) +
   geom_point() +
   scale_x_datetime(name = "Week", expand = c(0,0), limits = date_limits) +
   scale_y_continuous(name = "Time Spent [%]", expand = c(0,0), limits = c(0,1),
                      labels = scales::percent) +
-  facet_wrap(~Activity, scales = "free", ncol = 2) +
+  facet_wrap(~Activity, scales = "free", ncol = 3) +
   scale_color_manual(values = pal_activity) +
   #stat_smooth(formula = "y ~ x") +
   theme(legend.position = "bottom") +
@@ -314,7 +317,7 @@ slope_logistics <- coef(lm_logistics)[2]*60*60*24*7*100
 
 ```
 
-While some of these are pretty consistent, the trend in `research` is even more noticeable here. There is a significant (p<1e-5) trend of `r slope_research` percentage points per week, which comes out to ~`r round(slope_research*52, 0)` percentage points over the course of a year. Some of this is driven by an increase in field work compared to previous years - in 2021 I conducted field work on `r n_field_days_2021` days, compared to `r n_field_days_2020` days in 2020 and `r n_field_days_2019` days in 2019. There was also a slight, but not significant, positive trend in `logistics` of `r slope_logistics` percentage points per week.
+While some of these are pretty consistent, the trend in `research` is even more noticeable here. There is a significant (p<1e-5) trend of `r round(slope_research, 2)` percentage points per week, which comes out to ~`r round(slope_research*52, 0)` percentage points over the course of a year. Some of this is driven by an increase in field work compared to previous years - in 2021 I conducted field work on `r n_field_days_2021` days, compared to `r n_field_days_2020` days in 2020 and `r n_field_days_2019` days in 2019. There was also a slight, but not significant, positive trend in `logistics` of `r round(slope_logistics, 2)` percentage points per week.
 
 # How about evening work?
 During the last couple months of the year, I felt like I regressed into working periodically in the evenings, in part because my wife was working evenings so I didn't have anything to do after the kids were in bed. Here, I define the "evening" as anything after 5 PM, and exclude the `field`, `conference`, and `travel` categories since those are when I am away from home.
@@ -336,7 +339,7 @@ evening_work <-
 ggplot(subset(evening_work, Year >= 2020), aes(x = YM, fill = Activity)) +
   geom_bar() +
   scale_y_continuous(name = "Half-Hours Worked After 5 PM") +
-  scale_x_datetime(name = "Year-Month") +
+  scale_x_date(name = "Year-Month") +
   scale_fill_manual(values = pal_activity) +
   labs(title = "Monthly evening work")
 
@@ -348,6 +351,7 @@ This suggests that my ability to resist to evening work ebbs and flows, with mor
 In 2021, I met one of my goals but not the other. I was happy that my plan to not work at least 1 day per weekend was a success, and led to a substantial increase in the number of 0-hour work days I had during the year. However, I wasn't able to decrease the amount of time spent on `logistics`, which in fact has a slight (non-significant) upward slope.
 
 For 2022, my goals are: 
+
  - Stem the significant downward trend in `research` time. My 2022 target is to stabilize at an average no lower than 25%, which I will do by reserving the first couple hours of each day for research before getting in to other stuff.
  - My evening work is creeping upwards and needs to be stemmed. The 2022 target is to maintain an evening work level of no more than 10 hours/month.
  - Reduce the number of `field` days. I love field work, but 34 days is too many since it strains our family's childcare schedule. I'm aiming for 24 total days (2/month) next year.
