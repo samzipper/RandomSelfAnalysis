@@ -1,0 +1,359 @@
+---
+title: "What did I do in 2022?"
+subtitle: "Tracking my work and non-work time."
+author: "Sam Zipper"
+date: 2023-01-02
+output: 
+  html_document:
+    toc: true
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(patchwork)
+
+## ggplot theme
+windowsFonts(Arial=windowsFont("TT Arial"))
+theme_scz <- function(...){
+  theme_bw(base_size=10, base_family="Arial") + 
+    theme(
+      text=element_text(color="black"),
+      plot.title=element_text(face="bold", size=rel(1)),
+      axis.title=element_text(face="bold", size=rel(1)),
+      axis.text=element_text(size=rel(1)),
+      strip.text=element_text(size=rel(1)),
+      legend.title=element_text(face="bold", size=rel(1)),
+      legend.text=element_text(size=rel(1)),
+      panel.grid=element_blank(),
+      plot.margin=unit(c(1,1,1,1), "mm"),
+      strip.background=element_blank())
+}
+
+theme_set(theme_scz())
+
+# color palette
+col.cat.grn <- "#3cb44b"   # green
+col.cat.yel <- "#ffe119"   # yellow
+col.cat.org <- "#f58231"   # orange
+col.cat.red <- "#e6194b"   # red
+col.cat.blu <- "#0082c8"   # blue
+col.gray <- "gray65"       # gray for annotation lines, etc
+
+# colors by activity
+pal_activity <-
+  c("research" = "#e41a1c", 
+    "logistics" = "#377eb8", 
+    "talking" = "#4daf4a", 
+"conference" = "#984ea3", 
+"service" = "#ff7f00", 
+"mentees" = "#ffff33",
+"teaching" = "cyan",
+"field" = "darkslategray")
+
+# date limits for plots
+date_limits <- as.POSIXct(c(ymd("2019-01-01"), ymd("2023-01-01")))
+
+# load data
+all_weeks_19 <- read_csv("https://raw.github.com/samzipper/SelfAnalysis/master/WorkTimeAnalysis_Hours_2019.csv", col_types = "ccccT")
+all_weeks_20 <- read_csv("https://raw.github.com/samzipper/SelfAnalysis/master/WorkTimeAnalysis_Hours_2020.csv", col_types = "ccccT")
+all_weeks_21 <- read_csv("https://raw.github.com/samzipper/SelfAnalysis/master/WorkTimeAnalysis_Hours_2021.csv", col_types = "ccccT")
+all_weeks_22 <- read_csv("https://raw.github.com/samzipper/SelfAnalysis/master/WorkTimeAnalysis_Hours_2022.csv", col_types = "ccccT")
+
+# combine years
+all_weeks <- 
+  all_weeks_19 %>% 
+  dplyr::bind_rows(all_weeks_20) %>% 
+  dplyr::bind_rows(all_weeks_21) %>% 
+  dplyr::bind_rows(all_weeks_22) %>% 
+  subset(!is.na(Time))
+
+# set factors for plotting
+all_weeks$Day <- factor(all_weeks$Day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+all_weeks$Time <- factor(all_weeks$Time, levels = unique(all_weeks$Time))
+
+# lump 'Travel' with 'Not Work' because if I was working on the plane I coded it as such
+all_weeks$Activity[all_weeks$Activity == "travel"] <- "Not Work"
+```
+
+# What is this?
+
+This is the third installment of analyzing how much time I spend working and what I do when I'm on the clock, following up on my [initial 2019-2020 analysis](https://www.samzipper.com/post/2021-01-02_how-much-do-i-work/) and a [follow-up including 2021](https://www.samzipper.com/post/2022-01-02-work-tracking-update/). The underlying data is [a simple spreadsheet](https://docs.google.com/spreadsheets/d/1uusWA60VTzQMyd86N3PPVGUw3Iaxk_BeSHOPRUgc6R8/edit) where I log what I'm doing every 30 minutes in a handful of pretty broad categories.
+
+This year, I'll just check in on some base statistics and then assess performance relative to some previous goals. 
+
+# How much do I work?
+
+```{r, include=FALSE}
+# summarize by week
+weekly_hrs <- 
+  all_weeks %>% 
+  dplyr::group_by(week_start_date) %>% 
+  dplyr::summarize(hours_worked = sum(Activity != "Not Work")*0.5) %>% 
+  dplyr::mutate(Year = lubridate::year(week_start_date))
+
+# median and mode
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+median_hrs_wk <- median(weekly_hrs$hours_worked)
+mode_hrs_wk <- getmode(weekly_hrs$hours_worked)
+
+# summarize by year
+weekly_hrs_yr <- 
+  weekly_hrs %>% 
+  group_by(Year) %>% 
+  summarize(median_hrs_wk = median(hours_worked),
+            mean_hrs_wk = mean(hours_worked))
+```
+
+Weekly, my hours worked remains pretty consistent relative to previous years, hovering within a few hours of 40 with a lot of variability:
+
+```{r, echo=FALSE, fig.width=6, fig.height=4} 
+ggplot(weekly_hrs, aes(x = week_start_date, y = hours_worked)) +
+  geom_col(color = NA, fill = "black") +
+    scale_x_datetime(name = NULL, expand = c(0, 0), limits = date_limits) +
+  scale_y_continuous(name = "Hours Worked in Week",
+                     expand = expansion(mult = c(0, 0.05))) +
+  geom_hline(yintercept = 40, color = col.gray)
+```
+
+Looking at the typical (median) week, there was a slight decrease in 2022 relative to past years from a high of `r round(weekly_hrs_yr$median_hrs_wk[weekly_hrs_yr$Year == 2019], 1)` hours in 2019 to `r round(weekly_hrs_yr$median_hrs_wk[weekly_hrs_yr$Year == 2022], 1)` hours in 2022. 
+
+```{r, include=FALSE}
+# make a column for the actual date
+day_to_number <- tibble(Day = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+                        DayNum = seq(0,6))
+all_weeks <-  
+  dplyr::left_join(all_weeks, day_to_number, by = "Day") %>% 
+  dplyr::mutate(date = week_start_date + days(DayNum))
+
+# summarize by day
+daily_hrs <- 
+  all_weeks %>% 
+  dplyr::group_by(date, Day, week_start_date, Daytype) %>% 
+  dplyr::summarize(hours_worked = sum(Activity != "Not Work")*0.5) %>% 
+  dplyr::mutate(hours_worked_cut = cut(hours_worked, c(0, 0.25, 2, 6, 9, 24), include.lowest = T,
+                                       labels = c("0", "0.5 - 2", "2.5 - 6", "6.5 - 9", "> 9.5")),
+                Year = lubridate::year(date)) %>% 
+  subset(Year != 2023)
+
+daily_hrs$Day <- factor(daily_hrs$Day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# figure out average hours worked per day of work
+daily_hrs_yr <-
+  daily_hrs %>% 
+  group_by(Year) %>% 
+  summarize(work_hours = sum(hours_worked),
+            work_days = (sum(Daytype %in% c("conference", "work")) + sum(Daytype == "half day")*0.5),
+            work_hrs.day = work_hours/work_days)
+```
+
+Of course, the weekly hours don't account for time off, etc. If you account for paid time off by dividing total hours worked over number of work days, I've been steadily approaching the 8 hrs/day I get paid to work, clocking in at `r round(daily_hrs_yr$work_hrs.day[daily_hrs_yr$Year == 2022], 1)` hours in 2022:
+
+```{r, echo=FALSE, fig.width=4, fig.height=4} 
+ggplot(daily_hrs_yr, aes(x = Year, y = work_hrs.day)) +
+  geom_col(fill = "black") +
+  scale_y_continuous(name = "Average hours worked per work day",
+                     breaks = seq(0, 9, 1),
+                     expand = expansion(mult = c(0, 0.05))) +
+  geom_hline(yintercept = 8, color = col.gray)
+```
+
+# Checking in on goals
+
+## 1. Stop working on my days off
+
+```{r, include=FALSE}
+# figure out no work days per week
+weekly_no_work <-
+  daily_hrs %>% 
+  group_by(Year, week_start_date) %>% 
+  summarize(no_work_days = sum(hours_worked == 0))
+
+yearly_no_work <-
+  weekly_no_work %>% 
+  group_by(Year) %>% 
+  summarize(no_work_days_yr = sum(no_work_days),
+            weeks_gt_0 = sum(no_work_days > 0))
+
+p_noworkdays <-
+  ggplot(yearly_no_work, aes(x = Year, y = no_work_days_yr)) +
+  geom_col(fill = "black") +
+  scale_y_continuous(name = "Days with 0 hrs work",
+                     expand = expansion(mult = c(0, 0.05)))
+
+p_weeksoff <-
+  ggplot(yearly_no_work, aes(x = Year, y = weeks_gt_0)) +
+  geom_col(fill = "black") +
+  scale_y_continuous(name = "# of weeks with >= 1 day off",
+                     expand = expansion(mult = c(0, 0.05)))
+
+```
+
+**Background:** I set this goal at the beginning of 2021, after observing that I often was working for an hour or two on weekends - most often, checking/responding to email during kids' nap time. As part of my broader goal of being more disconnected, I wanted to ensure that there was adequate time I was completely disconnected.
+
+**Results:** Overall, I've now met this goal in the past two years. In 2022, I had `r yearly_no_work$no_work_days_yr[yearly_no_work$Year == 2022]` days with absolutely no work, including at least one day completely off in `r yearly_no_work$weeks_gt_0[yearly_no_work$Year == 2022]` weeks (exactly the same as in 2021, coincidentally).
+
+```{r, echo=FALSE, fig.width=8, fig.height=4} 
+p_noworkdays + p_weeksoff +
+  plot_layout(nrow = 1)
+```
+
+**2023 plan:** Keep it up! Goal and approach to remain unchanged.
+
+## 2. Do more research and less logistics
+
+```{r, include=FALSE}
+# data frame with just work hours
+all_work <- all_weeks[all_weeks$Activity != "Not Work", ]
+
+# summarize by activity
+work_by_activity <-
+  all_work %>% 
+  dplyr::group_by(Activity) %>% 
+  dplyr::summarize(Hours = n()*0.5,
+                   PrcTime = Hours/sum(weekly_hrs$hours_worked)) %>% 
+  dplyr::arrange(-Hours)
+
+# yearly percent for each activity
+work_by_year <-
+  all_work %>% 
+  dplyr::mutate(Year = lubridate::year(week_start_date)) %>% 
+  dplyr::group_by(Year) %>% 
+  dplyr::summarize(halfhrs = n(),
+                   conference = sum(Activity=="conference")/halfhrs,
+                   logistics = sum(Activity=="logistics")/halfhrs,
+                   mentees = sum(Activity=="mentees")/halfhrs,
+                   field = sum(Activity=="field")/halfhrs,
+                   research = sum(Activity=="research")/halfhrs,
+                   service = sum(Activity=="service")/halfhrs,
+                   talking = sum(Activity=="talking")/halfhrs,
+                   teaching = sum(Activity=="teaching")/halfhrs) %>% 
+  dplyr::select(-halfhrs) %>% 
+  tidyr::pivot_longer(all_of(work_by_activity$Activity), names_to = "Activity", values_to = "Time_Prc")
+
+# weekly percent for each activity
+work_by_week <-
+  all_work %>% 
+  dplyr::group_by(week_start_date) %>% 
+  dplyr::summarize(halfhrs = n(),
+                   conference = sum(Activity=="conference")/halfhrs,
+                   logistics = sum(Activity=="logistics")/halfhrs,
+                   mentees = sum(Activity=="mentees")/halfhrs,
+                   field = sum(Activity=="field")/halfhrs,
+                   research = sum(Activity=="research")/halfhrs,
+                   service = sum(Activity=="service")/halfhrs,
+                   talking = sum(Activity=="talking")/halfhrs,
+                   teaching = sum(Activity=="teaching")/halfhrs) %>% 
+  dplyr::select(-halfhrs) %>% 
+  tidyr::pivot_longer(all_of(work_by_activity$Activity), names_to = "Activity", values_to = "Time_Prc")
+
+# set factor to order by most to least common
+work_by_activity$Activity <- factor(work_by_activity$Activity, levels = work_by_activity$Activity)
+all_work$Activity <- factor(all_work$Activity, levels = work_by_activity$Activity)
+all_work$Activity <- factor(all_work$Activity, levels = work_by_activity$Activity)
+work_by_week$Activity <- factor(work_by_week$Activity, levels = rev(work_by_activity$Activity))
+```
+
+**Background:** As I've moved into a PI role, I've spent less time working on research itself and more time working on the management and administration of research - writing grants, preparing project reports, emailing collaborators, etc. This is necessary, but I still want to continue leading at least 1 paper/year, so still need to set aside time for research that I am leading. This is a combination of a 2021 (do less logistics) and 2022 goal (do more research, >= 25% of time).
+
+**Results:** This was less successful than the previous goal. From a total hours perspective, 2022 saw a pretty dramatic decrease in time spent on my own research. While the time in logistics also went down a bit, the decrease in research was due to increases in time spent interacting with others - including meetings/seminars ("talking"), my own mentees, teaching, and conferences.
+
+```{r, echo=FALSE, fig.width=6, fig.height=4}
+all_work %>% 
+  dplyr::mutate(Year = lubridate::year(week_start_date)) %>% 
+  ggplot(aes(x = Year, fill = Activity)) +
+  geom_bar() +
+  scale_y_continuous(name = "Half-Hours",
+                     expand = expansion(mult = c(0, 0.05))) +
+  scale_fill_manual(values = pal_activity)
+```
+
+At a weekly resolution, the decrease in research is pretty clearly part of a multi-year trend, though with some signs of increase at the end of the semester:
+
+```{r, echo=FALSE, fig.width=8, fig.height=6}
+ggplot(work_by_week, aes(x = week_start_date, y = Time_Prc, color = Activity)) +
+  geom_point() +
+  scale_x_datetime(name = "Week", expand = c(0,0), limits = date_limits) +
+  scale_y_continuous(name = "Time Spent [%]", expand = c(0,0), limits = c(0,1),
+                     labels = scales::percent) +
+  facet_wrap(~Activity, scales = "free", ncol = 3) +
+  scale_color_manual(values = pal_activity) +
+  #stat_smooth(formula = "y ~ x") +
+  theme(legend.position = "bottom") +
+  labs(title = "Weekly percent time by activity")
+```
+
+**2023 plan:** There were signs of success in late 2022, which I think was due to a combination of factors: (i) restructured my schedule to have research time each day; (ii) no travel during this period, allowing me to maintain that schedule; and (iii) being more diligent about staying off email during the day. I'll try to keep this up and see where it leads.
+
+## 3. Keep evening work < 10 hrs/month
+
+```{r, include=FALSE}
+# evening work, excluding field, conference, and travel
+evening_work <-
+  all_weeks %>% 
+  subset(Time %in% levels(all_weeks$Time)[21:35]) %>% 
+  subset(!(Activity %in% c("Not Work", "field", "conference", "travel"))) %>% 
+  mutate(Year = lubridate::year(week_start_date),
+         Month = lubridate::month(week_start_date),
+         YM = ymd(paste0(Year, "-", Month, "-01")))
+
+```
+
+**Background:** Similar to goal 1, this goal is serving my larger mission of disconnecting from work more regularly and frequently.
+
+**Results:** I had pretty poor performance on this goal - actually, even worse than 2021. While there were signs of progress in the summer, teaching in October and part of November definitely extended into the evening hours with regularity. 
+
+```{r, echo=FALSE, fig.width=6, fig.height=8}
+ggplot(subset(evening_work, Year >= 2020), aes(x = Month, fill = Activity)) +
+  geom_bar() +
+  facet_wrap(~Year, ncol = 1) +
+  scale_y_continuous(name = "Half-Hours Worked After 5 PM",
+                     expand = expansion(mult = c(0, 0.05))) +
+  scale_x_continuous(name = "Month", breaks = seq(1,12)) +
+  scale_fill_manual(values = pal_activity) +
+  labs(title = "Monthly evening work") +
+  geom_hline(yintercept = 10, color = col.gray)
+```
+
+**2023 plan:** I think part of the challenge of this goal is that "hours/month" are a lot harder to keep in mind than "days/week". So, I am changing this goal to evening work <= 1 day/week. Since when I do work in the evening it is usually for 1.5-2 hours (from kid bedtime to my bedtime), this lines up pretty closely with the previous goal but should be easier to keep track of from week to week.
+
+## 4. Maximum 24 total field work days. 
+
+```{r, include=FALSE}
+n_field_days_yr <-
+  all_work %>% 
+  subset(Activity == "field") %>% 
+  select(date) %>% 
+  unique() %>% 
+  mutate(Year = year(date)) %>% 
+  group_by(Year) %>% 
+  summarize(n_field_days = n())
+```
+
+**Background:** This goal exists because in 2021 I overdid it with field work, which put stress on all the other parts of my schedule because other stuff (logistics, talking, etc.) has to get squeezed into fewer days. Big picture, 1-2 days per month is my target for a good amount of field work that still gets me outside but also allows me to get everything else done.
+
+**Results:** Success - the number of days I spent out in the field hit a high point in 2021, and has decreased back to normal levels in 2022. I can't attribute this to any proactive steps on my part, but rather the natural ebb and flow of projects leading to less intensive field work, and most of it could be handled by students I was supervising.
+
+```{r, echo=FALSE, fig.width=4, fig.height=4} 
+ggplot(n_field_days_yr, aes(x = Year, y = n_field_days)) +
+  geom_col(fill = "black") +
+  scale_y_continuous(name = "Number of days with field work",
+                     expand = expansion(mult = c(0, 0.05))) +
+  geom_hline(yintercept = 24, color = col.gray)
+```
+
+**2023 plan:** Stay the course - the key will be designing summer intern projects that do not require me out in the field too much. 
+
+# Any updates for 2023?
+
+Not really - my 2023 goals will be pretty consistent and can be lumped into two broad categories:
+
+ - *Disconnecting:* Minimum of 1/day week with no work, and maximum of 1 day/week with evening work.
+ - *Time allocation:* Average 20% time research, and 1 day/month field work.
+ 
+We'll see in a year!
