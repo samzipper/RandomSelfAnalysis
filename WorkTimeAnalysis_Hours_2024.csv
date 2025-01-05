@@ -13681,8 +13681,8 @@ Time,Day,Activity,Daytype,week_start_date
 7:00 PM,Friday,Not Work,day off,2024-12-29
 7:30 PM,Friday,Not Work,day off,2024-12-29
 8:00 PM,Friday,Not Work,day off,2024-12-29
-8:30 PM,Friday,Not Work,day off,2024-12-29
-9:00 PM,Friday,Not Work,day off,2024-12-29
+8:30 PM,Friday,logistics,day off,2024-12-29
+9:00 PM,Friday,logistics,day off,2024-12-29
 9:30 PM,Friday,Not Work,day off,2024-12-29
 10:00 PM,Friday,Not Work,day off,2024-12-29
 10:30 PM,Friday,Not Work,day off,2024-12-29
@@ -13701,8 +13701,8 @@ Time,Day,Activity,Daytype,week_start_date
 10:30 AM,Saturday,Not Work,weekend,2024-12-29
 11:00 AM,Saturday,Not Work,weekend,2024-12-29
 11:30 AM,Saturday,Not Work,weekend,2024-12-29
-12:00 PM,Saturday,Not Work,weekend,2024-12-29
-12:30 PM,Saturday,Not Work,weekend,2024-12-29
+12:00 PM,Saturday,mentees,weekend,2024-12-29
+12:30 PM,Saturday,mentees,weekend,2024-12-29
 1:00 PM,Saturday,Not Work,weekend,2024-12-29
 1:30 PM,Saturday,Not Work,weekend,2024-12-29
 2:00 PM,Saturday,Not Work,weekend,2024-12-29
